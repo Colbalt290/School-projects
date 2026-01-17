@@ -7,10 +7,11 @@ int main (){
   srand (time (0));
   bool IsRunning = true;
   char y, n, answer;
-  
+
 while (IsRunning){
 
 int diceroll = (rand() % 6 + 1);
+  cout << "===============================";
   cout << "Roll the dice? y/n? " << endl;
   cin >> answer;
 
