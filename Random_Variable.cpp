@@ -11,7 +11,7 @@ int main (){
 while (IsRunning){
 
 int diceroll = (rand() % 6 + 1);
-  cout << "===============================";
+  cout << "===============================" << endl;
   cout << "Roll the dice? y/n? " << endl;
   cin >> answer;
 
