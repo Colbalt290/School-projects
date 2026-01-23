@@ -26,9 +26,15 @@ public:
                     break;
                 
                 case 3:
-                    jobTitle = "Master":
+                    jobTitle = "Master";
                     aura = 100;
                     hp = 50;
+                    break;
+
+                case 4:
+                    jobTitle = "Tarnished";
+                    aura = 0;
+                    hp = 100;
                     break;
             }
         }
