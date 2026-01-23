@@ -26,7 +26,10 @@ public:
                     break;
                 
                 case 3:
-                    jo
+                    jobTitle = "Master":
+                    aura = 100;
+                    hp = 50;
+                    break;
             }
         }
 }
