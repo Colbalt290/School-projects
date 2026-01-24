@@ -67,7 +67,7 @@ void initialAura(){
     }
 }
 void jobSelect(){
-  
+  cout << "Select your Class."
 }
 int main(){
     
