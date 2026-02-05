@@ -2,46 +2,84 @@
 #include <ctime>
 #include <cstdlib>
 using namespace std;
+char opt;
 
-int main (){
-    bool start = true;
-    bool Calcrun;
-    char ynh, i;
-
-    cout << "Welcome to Vekkir's primitive calculator." << endl;
-    cout << "Would you like to begin? [y/n] or view the help menu? [h]: ";
-    cin >> ynh;
-
-while (start){
-    switch (ynh){
-        case 'y':
-        cout << "Insert your numbers and operators." << endl;
-        Calcrun = true;
-        start = false;
-        break;
-    
-        case 'n':
-        cout << "See you around then.";
-        break;
-    
-        case 'h':
-            cout << "Instructions:\n"
-                 << "1. Insert any number\n"
-                 << "2. Insert an operator\n"
-                 << "3. When satisfied with input, enter '=' to calculate.\n" 
-                 << endl;
-            
-            cout << "To begin, enter 'y'" << endl;
-            Calcrun = true;
-            start = false;
-            
+void clear (){
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
 }
+void startApp (){
+clear();
+switch (opt){
+    case 'y': {
+    double total;
+    double nextNum;
+    char op;
+
+        cout << "Insert your first number:" << endl;
+        cin >> total;
+
+    while (true){
+        cout << "Enter an Operation [+, -, *, /] or [=] to see result: " << endl;
+        cin >> op;
+
+    if (op == '='){
+        cout << "Result: " << total << endl;    
+        break;
     }
 
-while (Calcrun){
-    cout << "This is true.";
-    cin >> i;
-    break;
+    cout << "Next number: " <<endl;
+    cin >> nextNum;
+
+    switch (op){
+        case '+':
+            total += nextNum;
+            break;
+        case '-':
+            total -= nextNum;
+            break;
+        case '*':
+            total *= nextNum;
+            break;
+        case '/':
+        if (nextNum != 0){
+            total /= nextNum;
+        } else {
+            cout << "Cannot divide by zero." << endl;
+        }
+        break;
+        default:
+            cout << "Wrong operator." << endl;
+            break;
+    }
+
+    }
+        break;
+}
+    case 'h':
+    cout << "Instructions:\n"
+         << "1. Insert any number\n"
+         << "2. Insert an operator\n"
+         << "3. When satisfied with input, enter '=' to calculate.\n" 
+         << endl;
+}
 }
 
+int main (){
+    cout << "Welcome to Vekkir's primitive calculator." << endl;
+
+while (true){
+    cout << "Would you like to begin? [y/n] or view the help menu? [h]: " << endl;
+    cin >> opt;
+
+if (opt == 'n'){
+    cout << "See you around." << endl;
+    break;
+}
+    startApp();
+    }
+    return 0;
 }
