@@ -1,5 +1,5 @@
 #pragma once
-#include string
+#include <string>
 
 class Player{
     public:
@@ -8,5 +8,4 @@ class Player{
     std::string name, jobTitle;
 
     void setClass(int choice);
-
-}
+};
