@@ -5,7 +5,7 @@ class Player{
     public:
     //Attributes
     int age, aura, hp;
-    std::string name, jobTitle;
+    std::string name, jobTitle, desc;
 
     void setClass(int choice);
 };
