@@ -1,17 +1,18 @@
-#include <iostream>
-#include <iomanip>
+ #include <iostream>
+ #include <cstdlib> 
 #include <string>
-using namespace std;
-
-const int num[] = {1, 2, 3, 4, 5};
-
-int main()
-{
-int sum;
-  sum = 0;
-  for (int i = 0; i < 5; i++){
-    sum += num [i];
-  }
-  cout << sum;
-
-}
+#include <cstring>
+using namespace std; 
+   struct S { 
+        char *p; 
+    }; 
+    int main(void) { 
+        char *p = "abcd"; 
+        struct S S[2]; 
+        int i; 
+        for(i = 0; i < 2; i++) 
+        	S[i].p = p + i; 
+        cout<<S[1].p[0]; 
+        return 0; 
+    } 
+    
