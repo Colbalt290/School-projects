@@ -1,14 +1,15 @@
 #include <iostream>
 #include <chrono>
 using namespace std;
-
-int main (){
-    int value;
-    cout << "Enter a value: ";
-    cin >> value;
-    if (value == 69) {
-        cout << "Haha funny reddit number." << endl; 
-    } else {
-        cout << "Man fuck you." << endl;
-    }
-}
+    #include <stdio.h> 
+    int main(void) { 
+        FILE *f = fopen("file","w"); 
+        float f; 
+        fputs("12A",f); 
+        fclose(f); 
+        f = fopen("file","r"); 
+        fscanf(f,"%f",&f); 
+        fclose(f); 
+        printf("%f",f); 
+        return 0; 
+    } 
