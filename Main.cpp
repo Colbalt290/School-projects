@@ -1,15 +1,27 @@
 #include <iostream>
-#include <chrono>
 using namespace std;
-    #include <stdio.h> 
-    int main(void) { 
-        FILE *f = fopen("file","w"); 
-        float f; 
-        fputs("12A",f); 
-        fclose(f); 
-        f = fopen("file","r"); 
-        fscanf(f,"%f",&f); 
-        fclose(f); 
-        printf("%f",f); 
-        return 0; 
-    } 
+class Int {
+public:
+    int v;
+    Int(int a) { v = a; }
+    Int &operator--() {
+        ++v;
+        return *this;
+    }
+    Int &operator--(int v) {
+        v+=2;
+        return *this;
+    }
+
+};
+
+ostream &operator <<(ostream &o, Int &a) {
+    return o << a.v++;
+}
+
+int main() {
+    Int i = 0;
+    cout << --i << i--;
+    return 0;
+}
+
