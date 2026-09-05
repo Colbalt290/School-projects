@@ -11,13 +11,13 @@ def verify_login(username, password):
     return False
 
 #testing code:            
-username = input("Please enter your username:")
-password = input("Please enter your password:")
+#username = input("Please enter your username:")
+#password = input("Please enter your password:")
 
-if verify_login(username,password) is True:
-    logged_u = username
-    curr_bal = getbal(logged_u)
-    print(f"Welcome, {username}!",f"Your account balance is: {curr_bal}")
+#if verify_login(username,password) is True:
+    #logged_u = username
+    #curr_bal = getbal(logged_u)
+    #print(f"Welcome, {username}!",f"Your account balance is: {curr_bal}")
 
-else:
-    print("Wrong username or password!")
+#else:
+    #print("Wrong username or password!")
