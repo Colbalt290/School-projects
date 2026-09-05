@@ -17,7 +17,7 @@ password = input("Please enter your password:")
 if verify_login(username,password) is True:
     logged_u = username
     curr_bal = getbal(logged_u)
-    print(f"Welcome, {username}!",f"your account balance is: {curr_bal}")
+    print(f"Welcome, {username}!",f"Your account balance is: {curr_bal}")
 
 else:
     print("Wrong username or password!")
