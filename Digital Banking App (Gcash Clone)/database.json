@@ -1,0 +1,30 @@
+{
+    "student_1": {
+        "name": "Juan Dela Cruz",
+        "email": "juan@example.com",
+        "password": "password123",
+        "pin": "1234",
+        "balance": 4250.0
+    },
+    "NyanNyanNeko99": {
+        "name": "Elise Villanueva Dela Cruz",
+        "email": "evdelacruz@gmail.com",
+        "password": "neko123",
+        "pin": "6796",
+        "balance": 52000.0
+    },
+    "originalstarman": {
+        "name": "John Johndice Dez",
+        "email": "jjdez@yahoomail.com",
+        "password": "starman123",
+        "pin": "4207",
+        "balance": 10.0
+    },
+    "Coltan290": {
+        "name": "Psalm Vekkir Abas",
+        "email": "coltan@gmail.com",
+        "password": "coltan",
+        "pin": "1234",
+        "balance": 100.0
+    }
+}

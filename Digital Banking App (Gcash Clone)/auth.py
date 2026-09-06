@@ -1,14 +1,13 @@
-from db import user_db,getbal
+from db import user_db
 
-def verify_login(username, password):
-    """If returns True if credentials match, otherwise False."""
+def verify_login(identifier, secret):
+    """Verifies if user data matches existing data on db.py"""
 
-    #A precheck if the user exists in the database
-    if username in user_db:
-        #Checks for the correct username and password
-        if user_db[username]["password"] == password:
-            return True
-    return False
+    for username, account_data in user_db.items():
+        if identifier == username or identifier == account_data.get("email"):
+            if secret == account_data.get("password") or secret == account_data.get("pin"):
+                return username
+    return None
 
 #testing code:            
 #username = input("Please enter your username:")
