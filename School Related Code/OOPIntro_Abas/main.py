@@ -4,8 +4,8 @@
 import Accounts
 import ATM
 
-Account1 = Accounts.Accounts(account_number=123456,account_firstname="Psalm Victor",
-                            account_lastname="Abas",current_balance = 7272727,
+Account1 = Accounts.Accounts(account_number=123456,account_firstname="Psalm",
+                            account_lastname="Psalm",current_balance = 7272727,
                             address = "Silver Grove City",
                             email = "pvabas@mymail.mapua.edu.ph")
 
