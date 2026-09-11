@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from auth import auth  # Corrected import to use the auth object
+from auth import auth
 from db import bank_db
 
 class LoginScreen:
@@ -7,7 +7,7 @@ class LoginScreen:
         sg.theme('DarkTeal9')
         sg.set_options(font=('Segoe UI', 11))
 
-    # This entire block is now properly indented inside the class
+    # This is the signup block
     def open_signup(self):
         """Opens an account registration."""
         layout = [
@@ -24,7 +24,7 @@ class LoginScreen:
         signup_window = sg.Window('Sign Up', layout, margins=(20,20))
 
         while True:
-            event, values = signup_window.read()
+            event, values = signup_window.read() #Stereotypical block for closing a window
             if event in (sg.WINDOW_CLOSED, 'Cancel'):
                 break
 
@@ -48,7 +48,7 @@ class LoginScreen:
 
     def open_login(self):
         layout = [
-            [sg.Text("Welcome to Aurion", font=('Segoe UI', 14, 'bold'))],
+            [sg.Text("Welcome to Aurion!", font=('Segoe UI', 14, 'bold'))],
             [sg.Text("Username/Email:"), sg.Input(key='-UN-')],
             [sg.Text("Password/PIN:"), sg.Input(key='-PWORD-', password_char='*')],
             [sg.Text("", key='-OUTPUT-')],
