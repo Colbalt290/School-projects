@@ -1,117 +1,83 @@
-#db.py
 import json
 import os
 import random
 from datetime import datetime
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+class Database:
+    def __init__(self, filename='database.json'):
+        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.DB_FILE = os.path.join(self.BASE_DIR, filename)
 
-DB_FILE = os.path.join(BASE_DIR, 'database.json')
+        self.user_db = self.load_db()
 
-default_db = {
-    "student_1": {
-        "name": "Juan Dela Cruz",
-        "email": "juan@example.com",
-        "password": "password123",
-        "pin": "1234",
-        "balance": 4250.00
-    },
-        "NyanNyanNeko99": {
-        "name": "Elise Villanueva Dela Cruz",
-        "email": "evdelacruz@gmail.com",
-        "password": "neko123",
-        "pin": "6796",
-        "balance": 52000.00
-    },
-    "originalstarman": {
-        "name": "John Johndice Dez",
-        "email": "jjdez@yahoomail.com",
-        "password": "starman123",
-        "pin": "4207",
-        "balance": 10.00
-    }
-}
+    def load_db(self):
+        """Loads the database from the JSON file, or creates one if it is missing."""
+        if not os.path.exists(self.DB_FILE):
+            default_db = {}
+            with open(self.DB_FILE, 'w') as file:
+                json.dump(default_db, file, indent=4)
+                return default_db
 
-user_db = {
-    "NyanNyanNeko99": {
-        "name": "Elise Villanueva Dela Cruz",
-        "email": "evdelacruz@gmail.com",
-        "password": "neko123",
-        "pin": "6796",
-        "balance": 52000.00
-    },
-    "originalstarman": {
-        "name": "John Johndice Dez",
-        "email": "jjdez@yahoomail.com",
-        "password": "starman123",
-        "pin": "4207",
-        "balance": 10.00
-    },
-    "1": {
-        "name": "admin",
-        "email": "",
-        "password": "",
-        "pin": "",
-        "balance": 0.00
-    }
-}
+        with open(self.DB_FILE,'r') as file:
+            return json.load(file)
 
-def load_db():
-    """Loads the database from the JSON file, or creates one if it is missing."""
-    if not os.path.exists(DB_FILE):
-        with open(DB_FILE, 'w') as file:
-            json.dump(default_db, file, indent=4)
-            return default_db
+    def save_db(self):
+        """Writes the current user_db to the JSON file"""
+        with open(self.DB_FILE, 'w') as file:
+            json.dump(self.user_db, file, indent=4)
 
-    with open(DB_FILE,'r') as file:
-        return json.load(file)
+    def create_account(self, username, name, email, password, pin):
+        """Creates a new account and saves it to the database."""
+        if username in self.user_db:
+            return False
 
-def save_db():
-    """Writes the current user_db to the JSON file"""
-    with open(DB_FILE, 'w') as file:
-        json.dump(user_db, file, indent=4)
+        self.user_db[username] = {
+            "name" : name,
+            "email" : email,
+            "password": password,
+            "pin": pin,
+            "balance": 0.00
+        }
+        self.save_db()
+        return True
 
-user_db = load_db()
+    def gen_reciept_data(self, recipient, amount, transaction_type):
+        """Generates a receipt for any transaction."""
+        ref_num = f"AR-{random.randint(100000000, 999999999)}"
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def create_account(username, name, email, password, pin):
-    """Creates a new account and saves it to the database."""
-    if username in user_db:
-        return False
+        return {
+            "recipient": recipient,
+            "amount": amount,
+            "type": transaction_type,
+            "timestamp": timestamp,
+            "ref_num": ref_num
+        }
 
-    user_db[username] = {
-        "name" : name,
-        "email" : email,
-        "password": password,
-        "pin": pin,
-        "balance": 0.00
-    }
-    save_db()
-    return True
+    def getbal(self, username):
+        """Returns a user's balance."""
+        if username in self.user_db:
+            return self.user_db[username]["balance"]
+        return None
 
+    def update_bal(self, username, amount):
+        """This updates the user's balance."""
+        if username in self.user_db:
+            self.user_db[username]["balance"] += amount
+            self.save_db()
+            return self.user_db[username]["balance"]
+        return None
 
-def gen_reciept_data(recipient, amount, transaction_type):
-    """Generates a reciept for any transaction."""
-    ref_num = f"AR-{random.randint(100000000, 999999999)}"
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def send_money(self, sender, recipient, amount):
+        """Deducts from sender and adds to recipient if funds allow."""
+        if sender in self.user_db and recipient in self.user_db:
+            if self.user_db[sender]["balance"] >= amount:
+                self.user_db[sender]["balance"] -= amount
+                self.user_db[recipient]["balance"] += amount
+                self.save_db()
+                return True, self.user_db[sender]["balance"]
+            return False, "Insufficient balance."
+        return False, "Recipient username not found."
 
-    return {
-        "recipient": recipient,
-        "amount": amount,
-        "type": transaction_type,
-        "timestamp": timestamp,
-        "ref_num": ref_num
-    }
-
-def getbal(username):
-    """Returns a user's balance."""
-    if username in user_db:
-        return user_db[username]["balance"]
-    return None
-
-def update_bal(username, amount):
-    """This updates the user's balance."""
-    if username in user_db:
-        user_db[username]["balance"] += amount
-        save_db()
-        return user_db[username]["balance"]
-    return None
+# Initialize the object so main.py, auth.py, and dashboard.py can import it
+bank_db = Database()

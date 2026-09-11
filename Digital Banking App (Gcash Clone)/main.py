@@ -1,16 +1,25 @@
-import PySimpleGUI as sg
-import time
-from db import user_db, getbal, update_bal
-from auth import verify_login
-from login import open_login
-from dashboard import open_dashboard
+from login import LoginScreen
+from dashboard import DashboardScreen
+
+class AurionApp:
+    def __init__(self):
+        # Instantiate your UI classes once when the app starts
+        self.login_ui = LoginScreen()
+        self.dashboard_ui = DashboardScreen()
+
+    def run(self):
+        # The main application loop
+        while True:
+            # Trigger the login screen method
+            logged_in_user = self.login_ui.open_login()
+
+            # If the user closed the window or hit Quit, end the program
+            if logged_in_user is None:
+                break
+
+            # Open the dashboard for the authenticated user
+            self.dashboard_ui.open_dashboard(logged_in_user)
 
 if __name__ == '__main__':
-    while True:
-        logged_in_user = open_login()
-
-        if logged_in_user is None:
-            break
-
-        current_balance = getbal(logged_in_user)
-        open_dashboard(logged_in_user, current_balance)
+    app = AurionApp()
+    app.run()
