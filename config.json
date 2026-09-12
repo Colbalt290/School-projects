@@ -1,0 +1,7 @@
+{
+    "firefox": {
+        "start_hour": 0,
+        "end_hour": 24,
+        "is_blocked": false
+    }
+}
