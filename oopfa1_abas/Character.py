@@ -2,8 +2,8 @@ class Character():
     def __init__(self, username):
         self.__username = username
         self.__hp = 100
-        self.__mana = 100
         self.__damage = 5
+        self.__mana = 50 # mana stat
         self.__str = 0 # strength stat
         self.__vit = 0 # vitality stat
         self.__int = 0 # intelligence stat
@@ -36,10 +36,14 @@ class Character():
         return self.__agi
     def setAgi(self, new_agi):
         self.__agi = new_agi
+    def getMana(self): #Added Mana Attribute
+        return self.__mana
+    def setMana(self, new_mana):
+        self.__mana = new_mana
     def reduceHp(self, damage_amount):
         self.__hp = self.__hp - damage_amount
     def addHp(self, heal_amount):
         self.__hp = self.__hp + heal_amount
 
-character1 = Character("Colbalt290")
-print(character1.getUsername())
+#character1 = Character("Colbalt290")
+#print(character1.getUsername())

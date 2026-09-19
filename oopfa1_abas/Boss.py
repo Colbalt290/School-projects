@@ -1,3 +1,4 @@
+import random
 from Swordsman import Swordsman
 from Archer import Archer
 from Magician import Magician
@@ -9,3 +10,18 @@ class Boss(Swordsman, Archer, Magician):
         self.setVit(25)
         self.setInt(5)
         self.setHp(self.getHp() + self.getVit())
+        
+    def boss_turn(self, player):
+        print(f"\n--- {self.getUsername()}'s Turn ---")
+        
+        # Compile all inherited attacks into a list
+        attacks = [
+            self.basicAttack, 
+            self.slashAttack, 
+            self.rangedAttack, 
+            self.magicAttack  
+        ]
+        
+        # Randomly choose and execute one attack against the player
+        chosen_attack = random.choice(attacks)
+        chosen_attack(player)
