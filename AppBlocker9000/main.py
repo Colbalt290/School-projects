@@ -7,7 +7,7 @@ async def background_scan(context):
 
 def main():
     # Paste your @BotFather token inside the quotes
-    app = ApplicationBuilder().token("8897261823:AAGaDD31Sd4DdTwKZT066CTki17L-Zqu-Cs").build()
+    app = ApplicationBuilder().token("llll").build()
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("block", block_app))
