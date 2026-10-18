@@ -27,7 +27,6 @@ class Database:
             json.dump(self.user_db, file, indent=4)
 
     def create_account(self, username, name, email, password, pin):
-        """Creates a new account and saves it to the database."""
         if username in self.user_db:
             return False
 
