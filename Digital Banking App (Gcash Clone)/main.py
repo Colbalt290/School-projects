@@ -1,24 +1,29 @@
+import sys
+from PyQt6.QtWidgets import QApplication
 from login import LoginScreen
 from dashboard import DashboardScreen
 
 class AurionApp:
     def __init__(self):
-        # Instantiate your UI classes once when the app starts
+        self.app = QApplication(sys.argv)
         self.login_ui = LoginScreen()
         self.dashboard_ui = DashboardScreen()
 
+        # Wire Qt signals to handle screen transitions
+        self.login_ui.login_successful.connect(self.show_dashboard)
+        self.dashboard_ui.logout_requested.connect(self.show_login)
+
+    def show_dashboard(self, username):
+        self.login_ui.hide()
+        self.dashboard_ui.open_dashboard(username)
+
+    def show_login(self):
+        self.dashboard_ui.hide()
+        self.login_ui.show()
+
     def run(self):
-        # The main application loop
-        while True:
-            # Trigger the login screen method
-            logged_in_user = self.login_ui.open_login()
-
-            # If the user closed the window or hit Quit, end the program
-            if logged_in_user is None:
-                break
-
-            # Open the dashboard for the authenticated user
-            self.dashboard_ui.open_dashboard(logged_in_user)
+        self.login_ui.show()
+        sys.exit(self.app.exec())
 
 if __name__ == '__main__':
     app = AurionApp()

@@ -18,13 +18,19 @@
         "email": "jjdez@yahoomail.com",
         "password": "starman123",
         "pin": "4207",
-        "balance": 10.0
+        "balance": 10.0,
+        "inbox": [
+            "[2026-10-18 17:17:43] You have receieved 727.00 PHP from P**** V***** A***"
+        ]
     },
     "Coltan290": {
         "name": "Psalm Vekkir Abas",
         "email": "coltan@gmail.com",
         "password": "coltan",
         "pin": "1234",
-        "balance": 727.0
+        "balance": 727.0,
+        "inbox": [
+            "[2026-10-18 17:18:28] You have receieved 727.00 PHP from J*** J******* D**"
+        ]
     }
 }
