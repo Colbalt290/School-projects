@@ -1,0 +1,87 @@
+/* AURION - SHARED QT WIDGETS THEME */
+
+QWidget {
+    font-family: "Inter", "Segoe UI", sans-serif;
+    font-size: 14px;
+    color: #f2f7fa;
+    background-color: transparent;
+    selection-background-color: #44e3c0;
+    selection-color: #07251f;
+}
+
+QMainWindow, QDialog, QMessageBox, QWidget#aurionRoot {
+    background-color: #0b1118;
+}
+
+/* Base Inputs */
+QLineEdit, QAbstractSpinBox, QComboBox {
+    background-color: #0f1822;
+    color: #f2f7fa;
+    border: 1px solid #263544;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+QLineEdit:focus, QAbstractSpinBox:focus, QComboBox:focus {
+    border-color: #44e3c0;
+    background-color: #111e28;
+}
+
+/* Base Buttons */
+QPushButton, QToolButton {
+    background-color: #192735;
+    color: #f2f7fa;
+    border: 1px solid #263544;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QPushButton:hover, QToolButton:hover {
+    background-color: #223544;
+    border-color: #627c90;
+}
+
+QPushButton:pressed, QToolButton:pressed {
+    background-color: #0f1822;
+}
+
+/* Primary Accent Button (#loginButton & aurionRole="primary") */
+QPushButton[aurionRole="primary"],
+QPushButton#loginButton {
+    background-color: #44e3c0;
+    color: #07251f;
+    border: 1px solid #44e3c0;
+}
+
+QPushButton[aurionRole="primary"]:hover,
+QPushButton#loginButton:hover {
+    background-color: #70edce;
+    border-color: #70edce;
+}
+
+/* Title Styling */
+QLabel[aurionRole="loginTitle"] {
+    font-size: 28px;
+    font-weight: 600;
+    color: #f2f7fa;
+}
+
+QLabel[aurionRole="balance"] {
+    font-size: 42px;
+    font-weight: 600;
+    color: #44e3c0;
+}
+
+/* Link Button */
+QPushButton[aurionRole="link"] {
+    background-color: transparent;
+    color: #93a7b8;
+    border: none;
+}
+
+QPushButton[aurionRole="link"]:hover {
+    color: #44e3c0;
+}

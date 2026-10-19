@@ -30,7 +30,27 @@
         "pin": "1234",
         "balance": 727.0,
         "inbox": [
+            "[2026-10-19 22:11:59] Kiosk Cash-Out Completed: PHP 200.00 dispensed.",
+            "[2026-10-19 22:09:57] Cash-Out Requested: Code 637344 created for PHP 200.00.",
+            "[2026-10-19 17:41:10] Cash-out code 133054 expired. PHP 200.00 refunded.",
             "[2026-10-18 17:18:28] You have receieved 727.00 PHP from J*** J******* D**"
-        ]
+        ],
+        "cashouts": {
+            "133054": {
+                "amount": 200.0,
+                "expires_at": "2026-10-19T17:34:47.544339",
+                "status": "EXPIRED"
+            },
+            "498755": {
+                "amount": 200.0,
+                "expires_at": "2026-10-19T17:54:09.470856",
+                "status": "COMPLETED"
+            },
+            "637344": {
+                "amount": 200.0,
+                "expires_at": "2026-10-19T22:14:57.373793",
+                "status": "COMPLETED"
+            }
+        }
     }
 }
