@@ -231,6 +231,7 @@ class BankService:
         sender_name = self.user_db[sender].get("name", sender)
         recipient_name = self.user_db[recipient_un].get("name", recipient_un)
         censored_sender = self.censor_name(sender_name)
+        censored_recipient = self.censor_name(recipient_name)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         self.add_inbox_notification(
@@ -239,7 +240,7 @@ class BankService:
         )
         self.add_inbox_notification(
             sender,
-            f"[{timestamp}] Sent PHP {amount:,.2f} to {recipient_name}."
+            f"[{timestamp}] Sent PHP {amount:,.2f} to {censored_recipient}."
         )
         self.db.save_db()
 

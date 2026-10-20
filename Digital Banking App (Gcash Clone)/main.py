@@ -1,8 +1,12 @@
 import sys
+import os
 from PyQt6.QtWidgets import QApplication
 from ui.theme import apply_aurion_theme
 from ui.login import LoginScreen
 from ui.dashboard import DashboardScreen
+
+# Suppress harmless Qt D-Bus portal warning on Linux
+os.environ["QT_LOGGING_RULES"] = "qt.qpa.services=false"
 
 
 class AurionApp:

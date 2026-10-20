@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap, QIcon
-from .theme import LOGO_PATH
+from .theme import LOGO_PATH, APP_ICON_PATH
 from core import auth_service
 
 
@@ -15,8 +15,8 @@ class SignUpDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Aurion - Sign Up")
-        if os.path.exists(LOGO_PATH):
-            self.setWindowIcon(QIcon(LOGO_PATH))
+        if os.path.exists(APP_ICON_PATH):
+            self.setWindowIcon(QIcon(APP_ICON_PATH))
         self.setFixedSize(380, 320)
 
         layout = QFormLayout(self)
@@ -95,8 +95,8 @@ class LoginScreen(QWidget):
         self.setFixedSize(960, 600)
         self.setObjectName("aurionRoot")
 
-        if os.path.exists(LOGO_PATH):
-            self.setWindowIcon(QIcon(LOGO_PATH))
+        if os.path.exists(APP_ICON_PATH):
+            self.setWindowIcon(QIcon(APP_ICON_PATH))
 
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)

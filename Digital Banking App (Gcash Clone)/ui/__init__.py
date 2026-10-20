@@ -1,11 +1,11 @@
 """
 Aurion UI Presentation Layer.
-Contains all PyQt6/PySide6 widgets, dialogs, screens, and styling.
+Contains all PyQt6 widgets, dialogs, screens, and styling.
 """
 
 from .login import LoginScreen, SignUpDialog
 from .dashboard import DashboardScreen, ReceiptDialog
-from .kiosk import AurionKioskTerminal, KioskReceiptDialog
+from .kiosk import AurionKioskTerminal
 from .theme import apply_aurion_theme
 
 __all__ = [
@@ -14,7 +14,6 @@ __all__ = [
     "DashboardScreen",
     "ReceiptDialog",
     "AurionKioskTerminal",
-    "KioskReceiptDialog",
     "apply_aurion_theme",
 ]
 
