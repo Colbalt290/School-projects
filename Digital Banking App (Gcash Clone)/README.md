@@ -1,50 +1,59 @@
-# Aurion — Project Architecture & Code Documentation
+# Aurion
 
-> **Project Name:** Aurion (Digital Banking App / GCash Clone)  
-> **Framework:** Python 3 + PyQt6  
-> **Storage:** JSON File Persistence (`database.json`)  
-> **Design Pattern:** Layered Architecture (Separation of Core Logic vs. UI)
+Aurion is a digital banking app inspired by GCash. You can cash in, send money to friends, pay bills, and withdraw cash from a simulated ATM kiosk using a one-time code. It's built with Python 3 and PyQt6, and everything is saved in a single JSON file, so there's no database server to set up.
+
+The most important design choice: **the banking logic and the screens live in separate layers.** The logic doesn't know the UI exists, which makes it easy to test and easy to reuse if we ever move to web or mobile.
 
 ---
 
-## 1. High-Level Architecture
+## Table of Contents
 
-The project is split strictly into two layers to ensure clean code, maintainability, and testability:
+1. [How the project is organized](#1-how-the-project-is-organized)
+2. [How data is stored](#2-how-data-is-stored)
+3. [The core layer (the banking brain)](#3-the-core-layer-the-banking-brain)
+4. [The UI layer (what you see and click)](#4-the-ui-layer-what-you-see-and-click)
+5. [How things work, step by step](#5-how-things-work-step-by-step)
+6. [Running and testing it](#6-running-and-testing-it)
+
+---
+
+## 1. How the project is organized
 
 ```
 Digital Banking App (Gcash Clone)/
 │
-├── core/                     # Pure Python Business Logic (No UI imports)
-│   ├── __init__.py           # Package exports for services
-│   ├── database.py           # JSON file reading, writing, and user querying
-│   ├── auth_service.py       # Authentication, registration, and credential validation
-│   └── bank_service.py       # Transactions, balances, cashout codes, inbox, and receipts
+├── core/                     # Business logic only. No UI imports allowed.
+│   ├── __init__.py           # Exports the services
+│   ├── database.py           # Reads/writes the JSON file and finds users
+│   ├── auth_service.py       # Sign-up and login
+│   └── bank_service.py       # Money movement, cash-out codes, inbox, receipts
 │
-├── ui/                       # PyQt6 Presentation Layer (Widgets & Styling)
-│   ├── __init__.py           # UI component exports
-│   ├── theme.py              # Fusion style, QSS loader, icon resolution
-│   ├── login.py              # LoginScreen & SignUpDialog
-│   ├── dashboard.py          # DashboardScreen (Sidebar, Pages, StackedWidget)
-│   └── kiosk.py              # AurionKioskTerminal (ATM simulation)
+├── ui/                       # PyQt6 screens and styling
+│   ├── __init__.py           # Exports the UI components
+│   ├── theme.py              # Fusion style, QSS loading, icons
+│   ├── login.py              # LoginScreen and SignUpDialog
+│   ├── dashboard.py          # DashboardScreen (sidebar + pages)
+│   └── kiosk.py              # AurionKioskTerminal (the ATM simulation)
 │
-├── icons/                    # App assets (PNGs for logos, buttons, badges)
-├── database.json             # Flat-file database storage
-├── style.qss                 # Global Qt stylesheet definitions
-├── main.py                   # Main entry point (User Banking App)
-├── kiosk.py                  # Secondary entry point (Physical Kiosk Terminal)
-├── test_core.py              # Headless unit tests for core banking logic
-└── README.md                 # Project architecture & developer documentation
+├── icons/                    # PNGs for logos, buttons, and badges
+├── database.json             # Where all the data lives
+├── style.qss                 # Global Qt stylesheet
+├── main.py                   # Starts the banking app
+├── kiosk.py                  # Starts the kiosk terminal
+├── test_core.py              # Headless tests for the banking logic
+└── README.md                 # You are here
 ```
 
-### Why this design matters for a school defense:
-* **Separation of Concerns:** If you want to change the UI or switch from desktop to web/mobile, `core/` remains 100% untouched.
-* **Testability:** Core features (sending money, computing balances, expiring codes) are tested headless in `test_core.py` without needing Qt to open any windows.
+### Why we split it this way
+
+- **The UI can change without touching the logic.** If we swap the desktop app for a website, `core/` stays exactly as it is.
+- **The logic can be tested without opening a window.** Sending money, computing balances, and expiring codes are all checked in `test_core.py` with no Qt involved.
 
 ---
 
-## 2. Data Structure (`database.json`)
+## 2. How data is stored
 
-The entire application state is stored in a clean, human-readable JSON dictionary keyed by canonical **username**:
+Everything is kept in one readable JSON file, with each user stored under their **username**:
 
 ```json
 {
@@ -69,83 +78,92 @@ The entire application state is stored in a clean, human-readable JSON dictionar
 }
 ```
 
-### Key Data Fields:
-- **`password` & `pin`:** Dual credential support. Users can authenticate with either password or a 4-digit numeric PIN.
-- **`inbox`:** Array of notification strings shown on the dashboard inbox feed.
-- **`cashouts`:** Map of temporary 6-digit codes generated for ATM/Kiosk withdrawal. Status can be `"PENDING"`, `"COMPLETED"`, or `"EXPIRED"`.
+### What the fields mean
+
+- **`password` and `pin`**: Users can sign in with either one. The PIN is always 4 digits.
+- **`inbox`**: A list of notification messages. These show up in the dashboard's inbox feed.
+- **`cashouts`**: The temporary 6-digit codes used to withdraw cash at the kiosk. Each one is `PENDING`, `COMPLETED`, or `EXPIRED`.
+
+> **Heads up:** Passwords and PINs are stored as plain text. That's fine for a school project, but a real banking app would hash them.
 
 ---
 
-## 3. Core Layer (Business Logic)
+## 3. The core layer (the banking brain)
 
 ### `core/database.py`
-* **Class:** `Database`
-* **Purpose:** Single point of entry for reading (`load_db`) and writing (`save_db`) to `database.json`.
-* **Key Methods:**
-  - `find_username_by_identifier(identifier)`: Resolves an input to a canonical username, allowing users to log in with either their username or email address.
-  - `user_exists(username)`: Checks if a username is already registered.
+
+The `Database` class is the only thing that touches `database.json`. It loads the file with `load_db` and saves it with `save_db`.
+
+- `find_username_by_identifier(identifier)` takes whatever the user typed and finds their username. This is why people can log in with either their username or their email.
+- `user_exists(username)` checks whether a username is already taken.
 
 ### `core/auth_service.py`
-* **Class:** `AuthService`
-* **Purpose:** Handles account creation and login credential validation.
-* **Key Methods:**
-  - `create_account(username, name, email, password, pin)`: Validates that all fields are provided, PIN is exactly 4 digits, and username/email are unique. Initializes balance to `0.00`.
-  - `login(identifier, secret)`: Checks credentials. Returns `(success, username, error_message)`.
+
+The `AuthService` class handles creating accounts and checking logins.
+
+- `create_account(username, name, email, password, pin)` makes sure every field is filled in, the PIN is exactly 4 digits, and the username and email aren't already in use. New accounts start with a balance of `0.00`.
+- `login(identifier, secret)` checks the credentials and returns `(success, username, error_message)`.
 
 ### `core/bank_service.py`
-* **Class:** `BankService`
-* **Purpose:** Manages balances, financial transactions, notifications, and code redemption.
-* **Key Features:**
-  - `censor_name(name)`: Privacy function. Masks middle letters (e.g., `"John Doe"` → `"J*** D**"`).
-  - `get_balance(username)`: Automatically triggers `check_expired_cashouts` before returning balance to ensure expired funds are instantly refunded.
-  - `cash_in(username, amount)`: Increases user balance and records receipt.
-  - `cash_out(username, amount)`: Direct cash withdrawal.
-  - `generate_cashout_code(username, amount, validity_minutes=5)`: Deducts funds immediately into escrow, creates a 6-digit random code, and sets an ISO expiration timestamp.
-  - `check_expired_cashouts()`: Scans all pending codes. If `datetime.now() > expires_at`, marks code `"EXPIRED"`, refunds amount to balance, and notifies user.
-  - `redeem_cashout_code(code)`: Used by the Kiosk. Validates code, marks `"COMPLETED"`, and dispenses cash.
-  - `send_money(sender, recipient, amount)`: Peer-to-peer transfer. Censoring is applied to both parties' inbox notifications.
-  - `pay_bill(username, biller_name, amount)`: Bill/merchant payment handler.
+
+The `BankService` class does the actual banking: balances, transfers, notifications, and cash-out codes.
+
+- `censor_name(name)` protects privacy by masking most of each name, so `"John Doe"` becomes `"J*** D**"`.
+- `get_balance(username)` runs `check_expired_cashouts` first, so any expired code is refunded before you see your balance.
+- `cash_in(username, amount)` adds money and records a receipt.
+- `cash_out(username, amount)` handles a direct withdrawal.
+- `generate_cashout_code(username, amount, validity_minutes=5)` takes the money out of your balance right away and holds it aside. It then creates a random 6-digit code with an expiry time.
+- `check_expired_cashouts()` looks through all pending codes. If one is past its expiry, it marks the code `EXPIRED`, gives the money back, and notifies the user.
+- `redeem_cashout_code(code)` is what the kiosk calls. It checks the code, marks it `COMPLETED`, and dispenses the cash.
+- `send_money(sender, recipient, amount)` moves money between two users. Both inbox notifications use censored names.
+- `pay_bill(username, biller_name, amount)` handles bill and merchant payments.
 
 ---
 
-## 4. UI Layer (PyQt6 Presentation)
+## 4. The UI layer (what you see and click)
 
 ### `ui/theme.py`
-* Configures Qt's base style engine to `"Fusion"` for cross-platform consistency.
-* Loads `style.qss`.
-* Sets the global window/taskbar icon via `appicon.png` or `applogo.png`.
+
+Sets Qt to the cross-platform "Fusion" style, loads `style.qss`, and sets the window and taskbar icon from `appicon.png` or `applogo.png`.
 
 ### `ui/login.py`
-* **`LoginScreen`:** Two-panel split view (Brand showcase on left, login form on right). Emits `login_successful(username)` signal upon authentication.
-* **`SignUpDialog`:** Modal dialog with form inputs for registering new accounts.
+
+- **`LoginScreen`** is a split view: branding on the left, login form on the right. When login succeeds, it emits a `login_successful(username)` signal.
+- **`SignUpDialog`** is a pop-up form for creating a new account.
 
 ### `ui/dashboard.py`
-* **Navigation Architecture:** Single-window interface using `QStackedWidget` controlled by a modern left sidebar.
-* **Stack Pages:**
-  1. **Page 0 — Dashboard Home:** Greeting, hero balance card with eye toggle (show/hide balance), "Move your money" quick-action cards, and real-time inbox feed.
-  2. **Page 1 — Cash In:** Inline form + right side balance card.
-  3. **Page 2 — Cash Out:** Generates 6-digit code modal dialog (`CashOutCodeDialog`).
-  4. **Page 3 — Send Money:** Recipient + amount inline form.
-  5. **Page 4 — Payment:** Biller/merchant + amount inline form.
-  6. **Page 5 — Log Out:** Confirmation card with current user profile preview.
-* **Custom Reusable Widgets:**
-  - `ActionCard`: Clickable card with hover animations and icons.
-  - `SideBalanceCard`: Right-column balance widget updating across all transaction pages.
-  - `AmountInputBox`: Input field styled with an integrated "PHP" currency prefix.
-  - `ReceiptDialog`: Pop-up showing formatted transaction details (`TXN-ID`, `Ref-No`, timestamp).
+
+The dashboard is a single window. A sidebar on the left switches between pages using a `QStackedWidget`.
+
+| Page | What it does |
+|---|---|
+| 0. Dashboard Home | A greeting, your balance card (with an eye icon to hide or show it), quick-action cards, and a live inbox feed |
+| 1. Cash In | An inline form with a balance card on the right |
+| 2. Cash Out | Generates a 6-digit code and shows it in `CashOutCodeDialog` |
+| 3. Send Money | Recipient and amount form |
+| 4. Payment | Biller or merchant and amount form |
+| 5. Log Out | A confirmation card with a preview of your profile |
+
+**Reusable widgets we built:**
+
+- `ActionCard`: a clickable card with hover animations and an icon.
+- `SideBalanceCard`: the balance panel that stays in sync across all transaction pages.
+- `AmountInputBox`: a text field with a built-in "PHP" prefix.
+- `ReceiptDialog`: a pop-up showing the transaction details (`TXN-ID`, `Ref-No`, timestamp).
 
 ### `ui/kiosk.py`
-* **`AurionKioskTerminal`:** Simulates a physical ATM terminal.
-* Features a touchscreen-style on-screen numeric keypad (`0-9`, Clear, Backspace) with 6 visual digit boxes.
-* 2-Step Flow:
-  1. **Step 1:** Enter 6-digit cash-out code.
-  2. **Step 2:** Cash dispensed verification + full printed receipt display with a button to return to home.
+
+`AurionKioskTerminal` pretends to be a physical ATM. It has a touchscreen-style keypad (`0-9`, Clear, Backspace) and six digit boxes that fill as you type.
+
+1. **Step 1:** Enter your 6-digit cash-out code.
+2. **Step 2:** The kiosk confirms the cash was dispensed, shows a full receipt, and gives you a button to go back to the start.
 
 ---
 
-## 5. Execution Flows
+## 5. How things work, step by step
 
-### Flow A: Peer-to-Peer Transfer (Send Money)
+### Sending money to someone
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -167,7 +185,10 @@ sequenceDiagram
     UI->>User: Displays ReceiptDialog
 ```
 
-### Flow B: Cash-Out & Kiosk Redemption (Two-App Synergy)
+### Withdrawing cash at the kiosk
+
+This is where the two apps work together: the banking app creates the code, and the kiosk redeems it.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -193,42 +214,39 @@ sequenceDiagram
 
 ---
 
-## 6. How to Run & Test
+## 6. Running and testing it
 
-### Prerequisites
-Make sure Python 3 and PyQt6 are installed:
+### Before you start
+
+You need Python 3 and PyQt6:
+
 ```bash
 pip install PyQt6
 ```
 
-### 1. Launching the Banking App
+### Launch the banking app
+
 ```bash
 python3 main.py
 ```
-*Test Accounts in `database.json`:*
-- Username: `Coltan290` | Password: `password123` | PIN: `1234`
-- Username: `student_1` | Password: `password123` | PIN: `1111`
 
-### 2. Launching the Kiosk Terminal
+Two test accounts are already in `database.json`:
+
+- Username `Coltan290`, password `password123`, PIN `1234`
+- Username `student_1`, password `password123`, PIN `1111`
+
+### Launch the kiosk
+
 ```bash
 python3 kiosk.py
 ```
 
-### 3. Running Unit Tests
+Generate a cash-out code in the banking app first, then type it into the kiosk.
+
+### Run the tests
+
 ```bash
 python3 test_core.py
 ```
-Runs 5 automated unit tests verifying account creation, duplicate prevention, cash-in, send money, and cash-out code generation without opening any windows.
 
----
-
-## 7. School Defense / Presentation Cheat Sheet
-
-| Question | Recommended Answer |
-|---|---|
-| **What architecture did you use?** | "We used a 2-Tier Layered Architecture separating pure business logic (`core/`) from UI presentation (`ui/`). This ensures business rules can be unit tested without a GUI." |
-| **How does data persist?** | "We use a flat-file JSON database (`database.json`) managed by `core/database.py`, loaded into memory on demand and serialized upon transaction completion." |
-| **How do Cash-Out codes expire?** | "Each code records an ISO timestamp 5 minutes into the future. Every time a balance is queried or a code is redeemed, `check_expired_cashouts()` runs automatically, marking overdue codes as expired and refunding the escrowed money back to the user." |
-| **How is privacy handled?** | "Sensitive names are masked using `censor_name()` so other users only see first initials and asterisks (e.g. `J*** D**`) in notifications and receipts." |
-| **How does the app stay responsive?** | "All screen transitions in the dashboard use a `QStackedWidget` rather than destroying and recreating windows, resulting in instant navigation and shared state." |
-
+This runs 5 automated tests covering account creation, duplicate prevention, cash-in, send money, and cash-out code generation. No windows open.
