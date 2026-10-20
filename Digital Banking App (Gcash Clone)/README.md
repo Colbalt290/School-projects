@@ -176,10 +176,12 @@ sequenceDiagram
     User->>UI: Inputs Bob's username & PHP 200
     UI->>Bank: send_money("Alice", "Bob", 200.0)
     Bank->>DB: Check balances & user existence
+    DB-->>Bank: Valid / Balance OK
     Bank->>DB: Alice balance -200, Bob balance +200
     Bank->>Bank: Censor names (A****, B**)
     Bank->>DB: Add notifications to both inboxes
     Bank->>DB: save_db()
+    DB-->>Rec: New inbox notification (Bob)
     Bank-->>UI: (True, new_balance, receipt)
     UI->>UI: update_balance_display() & refresh_inbox()
     UI->>User: Displays ReceiptDialog
