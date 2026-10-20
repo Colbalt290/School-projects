@@ -4,7 +4,11 @@
         "email": "juan@example.com",
         "password": "password123",
         "pin": "1234",
-        "balance": 4250.0
+        "balance": 4250.0,
+        "inbox": [
+            "[2026-10-20 21:04:28] Sent PHP 27.00 to P**** V***** A***.",
+            "[2026-10-20 21:03:46] Received PHP 27.00 from P**** V***** A***."
+        ]
     },
     "NyanNyanNeko99": {
         "name": "Elise Villanueva Dela Cruz",
@@ -59,6 +63,11 @@
                 "amount": 200.0,
                 "expires_at": "2026-10-20T18:21:14.062597",
                 "status": "EXPIRED"
+            },
+            "280224": {
+                "amount": 27.0,
+                "expires_at": "2026-10-20T21:05:07.873796",
+                "status": "COMPLETED"
             }
         }
     }
