@@ -182,7 +182,7 @@ class CashOutCodeDialog(QDialog):
     def __init__(self, code, amount, exp_time, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Aurion - Cash Out Reference Code")
-        self.setFixedSize(400, 420)
+        self.setFixedSize(420, 500)
         if os.path.exists(APP_ICON_PATH):
             self.setWindowIcon(QIcon(APP_ICON_PATH))
 

@@ -17,44 +17,62 @@ class SignUpDialog(QDialog):
         self.setWindowTitle("Aurion - Sign Up")
         if os.path.exists(APP_ICON_PATH):
             self.setWindowIcon(QIcon(APP_ICON_PATH))
-        self.setFixedSize(380, 320)
+        self.setFixedSize(450, 490)
 
         layout = QFormLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(12)
+        layout.setContentsMargins(32, 28, 32, 28)
+        layout.setSpacing(14)
+        layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+
+        def make_field_label(text):
+            lbl = QLabel(text)
+            lbl.setStyleSheet("color: #cbd5e1; font-size: 13px; font-weight: 600; border: none; background: transparent;")
+            return lbl
 
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("John Doe")
+        self.name_input.setFixedHeight(42)
 
         self.un_input = QLineEdit()
         self.un_input.setPlaceholderText("johndoe")
+        self.un_input.setFixedHeight(42)
 
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("john@example.com")
+        self.email_input.setFixedHeight(42)
 
         self.pword_input = QLineEdit()
         self.pword_input.setPlaceholderText("••••••••")
         self.pword_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.pword_input.setFixedHeight(42)
 
         self.pin_input = QLineEdit()
         self.pin_input.setPlaceholderText("••••")
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.pin_input.setFixedHeight(42)
 
-        layout.addRow("Full Name:", self.name_input)
-        layout.addRow("Username:", self.un_input)
-        layout.addRow("Email:", self.email_input)
-        layout.addRow("Password:", self.pword_input)
-        layout.addRow("4-Digit PIN:", self.pin_input)
+        layout.addRow(make_field_label("Full Name:"), self.name_input)
+        layout.addRow(make_field_label("Username:"), self.un_input)
+        layout.addRow(make_field_label("Email:"), self.email_input)
+        layout.addRow(make_field_label("Password:"), self.pword_input)
+        layout.addRow(make_field_label("4-Digit PIN:"), self.pin_input)
 
         self.msg_label = QLabel("")
         self.msg_label.setStyleSheet("color: #ff5555; font-size: 12px; border: none; background: transparent;")
         layout.addRow(self.msg_label)
 
         btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(12)
+
         self.register_btn = QPushButton("Register")
         self.register_btn.setProperty("aurionRole", "primary")
+        self.register_btn.setFixedHeight(42)
+        self.register_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn.setFixedHeight(42)
+        self.cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
 
         btn_layout.addWidget(self.register_btn)
         btn_layout.addWidget(self.cancel_btn)

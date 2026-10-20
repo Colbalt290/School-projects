@@ -19,7 +19,7 @@ QLineEdit, QAbstractSpinBox, QComboBox {
     color: #f2f7fa;
     border: 1px solid #263544;
     border-radius: 10px;
-    padding: 12px 16px;
+    padding: 8px 14px;
     font-size: 14px;
 }
 
@@ -34,7 +34,7 @@ QPushButton, QToolButton {
     color: #f2f7fa;
     border: 1px solid #263544;
     border-radius: 10px;
-    padding: 12px 18px;
+    padding: 10px 18px;
     font-size: 14px;
     font-weight: 600;
 }
