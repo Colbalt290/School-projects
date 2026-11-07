@@ -1,0 +1,736 @@
+/* BinTimer — style.qss
+   Background: #1e1e1e
+   Panels:     #262626
+   Controls:   #2c2c2c
+   Selection:  #383838
+   Borders:    #3a3a3a
+   Text:       #f5f5f5
+   Secondary:  #b3b3b3
+   Muted:      #858585
+*/
+
+/* Base */
+QWidget {
+    color: #f5f5f5;
+    font-family: "Inter";
+    font-size: 12px;
+    selection-background-color: #383838;
+    selection-color: #f5f5f5;
+}
+
+QMainWindow,
+QDialog,
+QWidget#centralWidget {
+    background-color: #1e1e1e;
+}
+
+QLabel {
+    background-color: transparent;
+    border: none;
+}
+
+QLabel[role="secondary"] {
+    color: #b3b3b3;
+}
+
+QLabel[role="muted"] {
+    color: #858585;
+    font-size: 11px;
+}
+
+QLabel[role="heading"] {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QLabel[role="mono"] {
+    font-family: "Roboto Mono";
+}
+
+/* Application chrome */
+QMenuBar {
+    background-color: #262626;
+    color: #b3b3b3;
+    border-bottom: 1px solid #3a3a3a;
+    padding: 4px 8px;
+}
+
+QMenuBar::item {
+    padding: 5px 10px;
+    background-color: transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #383838;
+    color: #f5f5f5;
+    border-radius: 4px;
+}
+
+QMenu {
+    background-color: #262626;
+    border: 1px solid #3a3a3a;
+    padding: 5px;
+}
+
+QMenu::item {
+    padding: 7px 24px;
+    border-radius: 4px;
+}
+
+QMenu::item:selected {
+    background-color: #383838;
+}
+
+QMenu::item:disabled {
+    color: #858585;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #3a3a3a;
+    margin: 5px;
+}
+
+QToolBar {
+    background-color: #1e1e1e;
+    border: none;
+    border-bottom: 1px solid #3a3a3a;
+    spacing: 8px;
+    padding: 10px;
+}
+
+QStatusBar {
+    background-color: #262626;
+    color: #858585;
+    border-top: 1px solid #3a3a3a;
+    font-size: 10px;
+}
+
+QStatusBar::item {
+    border: none;
+}
+
+/* Workspace surfaces */
+QFrame#sidebar {
+    background-color: #262626;
+    border: none;
+    border-right: 1px solid #3a3a3a;
+}
+
+QFrame#scramblePanel,
+QFrame#trendPanel,
+QFrame#detailsPanel,
+QFrame[role="statCard"] {
+    background-color: #262626;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+}
+
+QFrame#workspaceHeader {
+    background-color: #1e1e1e;
+    border: none;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+/* Timer */
+QLabel#timerDisplay {
+    color: #f5f5f5;
+    font-family: "Roboto Mono";
+    font-size: 136px;
+    font-weight: 400;
+    padding: 0;
+}
+
+QLabel#timerStatus,
+QLabel#timerHint {
+    color: #858585;
+    font-size: 11px;
+}
+
+QLabel#scrambleText {
+    color: #e6e6e6;
+    font-family: "Roboto Mono";
+    font-size: 21px;
+}
+
+QLabel#scrambleHeading {
+    color: #b3b3b3;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+QLabel[role="statValue"] {
+    color: #f5f5f5;
+    font-family: "Roboto Mono";
+    font-size: 26px;
+    font-weight: 500;
+}
+
+QLabel[role="statLabel"] {
+    color: #b3b3b3;
+    font-size: 11px;
+}
+
+QLabel[role="keycap"] {
+    background-color: #2c2c2c;
+    color: #b3b3b3;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-family: "Roboto Mono";
+    font-size: 10px;
+}
+
+/* Buttons */
+QPushButton,
+QToolButton {
+    background-color: #2c2c2c;
+    color: #b3b3b3;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 7px 12px;
+    min-height: 16px;
+}
+
+QPushButton:hover,
+QToolButton:hover {
+    background-color: #383838;
+    color: #f5f5f5;
+}
+
+QPushButton:pressed,
+QToolButton:pressed {
+    background-color: #303030;
+}
+
+QPushButton:checked,
+QToolButton:checked {
+    background-color: #383838;
+    color: #f5f5f5;
+    border-color: #858585;
+}
+
+QPushButton:focus,
+QToolButton:focus {
+    border-color: #b3b3b3;
+}
+
+QPushButton:disabled,
+QToolButton:disabled {
+    color: #858585;
+    background-color: #262626;
+    border-color: #303030;
+}
+
+QToolButton[role="icon"] {
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: 5px;
+}
+
+QToolButton[role="icon"]:hover {
+    background-color: #383838;
+}
+
+QPushButton[role="penalty"] {
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+/* Inputs and selectors */
+QLineEdit,
+QSpinBox,
+QDoubleSpinBox,
+QComboBox {
+    background-color: #2c2c2c;
+    color: #f5f5f5;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 7px 10px;
+    min-height: 16px;
+}
+
+QLineEdit:focus,
+QSpinBox:focus,
+QDoubleSpinBox:focus,
+QComboBox:focus {
+    border-color: #b3b3b3;
+}
+
+QComboBox:hover {
+    background-color: #303030;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #262626;
+    color: #f5f5f5;
+    border: 1px solid #3a3a3a;
+    selection-background-color: #383838;
+    selection-color: #f5f5f5;
+    padding: 4px;
+    outline: none;
+}
+
+QComboBox#sessionSelector {
+    background-color: #383838;
+}
+
+/* Solve history */
+QTableView,
+QTableWidget,
+QListView,
+QListWidget {
+    background-color: #262626;
+    alternate-background-color: #262626;
+    color: #b3b3b3;
+    border: none;
+    gridline-color: #303030;
+    outline: none;
+    font-family: "Roboto Mono";
+    font-size: 11px;
+    selection-background-color: #383838;
+    selection-color: #f5f5f5;
+}
+
+QTableView::item,
+QListView::item {
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 1px solid #303030;
+}
+
+QTableView::item:hover,
+QListView::item:hover {
+    background-color: #303030;
+}
+
+QTableView::item:selected,
+QListView::item:selected {
+    background-color: #383838;
+    color: #f5f5f5;
+}
+
+QHeaderView {
+    background-color: #262626;
+}
+
+QHeaderView::section {
+    background-color: #262626;
+    color: #858585;
+    border: none;
+    border-bottom: 1px solid #3a3a3a;
+    padding: 8px 10px;
+    font-family: "Inter";
+    font-size: 10px;
+    font-weight: 500;
+}
+
+QTableCornerButton::section {
+    background-color: #262626;
+    border: none;
+}
+
+/* Navigation tabs */
+QTabWidget::pane {
+    border: none;
+    background-color: #1e1e1e;
+}
+
+QTabBar::tab {
+    background-color: transparent;
+    color: #858585;
+    padding: 12px 18px;
+    border-bottom: 1px solid transparent;
+}
+
+QTabBar::tab:hover {
+    color: #b3b3b3;
+}
+
+QTabBar::tab:selected {
+    color: #f5f5f5;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background-color: transparent;
+    width: 8px;
+    margin: 2px;
+}
+
+QScrollBar:horizontal {
+    background-color: transparent;
+    height: 8px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #3a3a3a;
+    border-radius: 2px;
+    min-height: 28px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #3a3a3a;
+    border-radius: 2px;
+    min-width: 28px;
+}
+
+QScrollBar::handle:hover {
+    background-color: #858585;
+}
+
+QScrollBar::add-line,
+QScrollBar::sub-line {
+    width: 0;
+    height: 0;
+    border: none;
+}
+
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background-color: transparent;
+}
+
+QAbstractScrollArea::corner {
+    background-color: #262626;
+}
+
+/* Tooltips */
+QToolTip {
+    background-color: #303030;
+    color: #f5f5f5;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 11px;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   PvP Mode — 4-Player Battle Extensions
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Player zone container */
+QFrame#playerZone {
+    background-color: #262626;
+    border: 2px solid #3a3a3a;
+    border-radius: 12px;
+}
+
+QFrame#playerZone[state="running"] {
+    border-color: #e65100;
+    background-color: #2a2218;
+}
+
+QFrame#playerZone[state="stopped"] {
+    border-color: #2e7d32;
+    background-color: #1a2a1a;
+}
+
+/* Player timer display */
+QLabel#playerTimer {
+    color: #f5f5f5;
+    font-family: "Roboto Mono";
+    font-size: 52px;
+    font-weight: 300;
+}
+
+/* Player name — per-player accent colours */
+QLabel#playerName {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+QLabel#playerName[player="1"] { color: #42a5f5; }
+QLabel#playerName[player="2"] { color: #66bb6a; }
+QLabel#playerName[player="3"] { color: #ffa726; }
+QLabel#playerName[player="4"] { color: #ab47bc; }
+
+/* Status text below timer */
+QLabel#playerStatus {
+    color: #858585;
+    font-size: 13px;
+}
+
+/* Rank badge (shown after finish) */
+QLabel#rankLabel {
+    font-family: "Roboto Mono";
+    font-size: 20px;
+    font-weight: 600;
+    color: #f5f5f5;
+}
+
+/* Keycap hint */
+QLabel#keycapLabel {
+    background-color: #2c2c2c;
+    color: #858585;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-family: "Roboto Mono";
+    font-size: 11px;
+}
+
+/* BLE connect button */
+QPushButton#bleButton {
+    font-size: 11px;
+    padding: 5px 12px;
+    max-width: 180px;
+}
+
+QPushButton#bleButton:checked {
+    background-color: #1b3a1b;
+    border-color: #4caf50;
+    color: #66bb6a;
+}
+
+/* Sync / Reset button */
+QPushButton#syncButton {
+    font-size: 11px;
+    padding: 5px 12px;
+    max-width: 180px;
+    margin-bottom: 6px;
+    background-color: #2c2c2c;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #90caf9;
+}
+
+QPushButton#syncButton:hover {
+    background-color: #1e3a5f;
+    border-color: #1976d2;
+    color: #ffffff;
+}
+
+/* Move counter label */
+QLabel#moveLabel {
+    color: #42a5f5;
+    font-family: "Roboto Mono";
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Cube Visualizers */
+QWidget#cubeVisualizer,
+QWidget#cubeVisualizer3D {
+    background-color: transparent;
+    border: none;
+    margin: 4px 0;
+}
+
+/* Analytics button */
+QPushButton#analyticsBtn {
+    background-color: #1e3a5f;
+    border: 1px solid #1976d2;
+    color: #90caf9;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 8px;
+}
+
+QPushButton#analyticsBtn:hover {
+    background-color: #1565c0;
+    color: #ffffff;
+}
+
+/* Start match button — green accent */
+QPushButton#startButton {
+    background-color: #1b5e20;
+    border: 1px solid #2e7d32;
+    color: #66bb6a;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 28px;
+    border-radius: 8px;
+}
+
+QPushButton#startButton:hover {
+    background-color: #2e7d32;
+    color: #a5d6a7;
+}
+
+QPushButton#startButton:disabled {
+    background-color: #262626;
+    border-color: #3a3a3a;
+    color: #858585;
+}
+
+/* Reset button */
+QPushButton#resetButton {
+    font-size: 14px;
+    padding: 10px 28px;
+    border-radius: 8px;
+}
+
+/* Completion overlay card */
+QFrame#completionCard {
+    background-color: #262626;
+    border: 1px solid #3a3a3a;
+    border-radius: 16px;
+}
+
+QLabel#completionTitle {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f5f5f5;
+}
+
+QLabel#rankingsLabel {
+    color: #f5f5f5;
+    font-family: "Roboto Mono";
+    font-size: 16px;
+}
+
+QLabel#quoteLabel {
+    color: #b3b3b3;
+    font-size: 16px;
+    font-style: italic;
+    padding: 8px;
+}
+
+QPushButton#overlayCloseBtn {
+    font-size: 13px;
+    padding: 8px 20px;
+    border-radius: 8px;
+}
+
+/* BLE scan dialog */
+QLabel#scanStatus {
+    color: #b3b3b3;
+    font-size: 12px;
+    padding: 8px 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   Config Screen
+   ══════════════════════════════════════════════════════════════════ */
+
+QWidget#configScreen {
+    background-color: #1e1e1e;
+}
+
+QFrame#configCard {
+    background-color: #262626;
+    border: 1px solid #3a3a3a;
+    border-radius: 16px;
+}
+
+QLabel#configTitle {
+    font-size: 32px;
+    font-weight: 800;
+    color: #f5f5f5;
+}
+
+QLabel#configSubtitle {
+    font-size: 14px;
+    color: #858585;
+}
+
+/* Mode toggle buttons */
+QPushButton#modeButton {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 24px;
+    border-radius: 10px;
+    min-height: 20px;
+}
+
+QPushButton#modeButton:checked {
+    background-color: #1b5e20;
+    border-color: #2e7d32;
+    color: #a5d6a7;
+}
+
+/* Player count buttons */
+QPushButton#countButton {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+}
+
+QPushButton#countButton:checked {
+    background-color: #1565c0;
+    border-color: #1976d2;
+    color: #90caf9;
+}
+
+/* Config start button */
+QPushButton#configStartButton {
+    background-color: #1b5e20;
+    border: 1px solid #2e7d32;
+    color: #66bb6a;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 14px 32px;
+    border-radius: 10px;
+}
+
+QPushButton#configStartButton:hover {
+    background-color: #2e7d32;
+    color: #a5d6a7;
+}
+
+/* Back button on timer view */
+QPushButton#backButton {
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+}
+
+/* Checkboxes */
+QCheckBox#inspectionCheck,
+QCheckBox#bleCheck {
+    color: #b3b3b3;
+    font-size: 13px;
+    spacing: 8px;
+    padding: 4px 0;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    background-color: #2c2c2c;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #1b5e20;
+    border-color: #2e7d32;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   Inspection & Penalty States
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Inspection phase */
+QFrame#playerZone[state="inspecting"] {
+    border-color: #1565c0;
+    background-color: #1a2236;
+}
+
+/* Overtime (+2 warning) */
+QFrame#playerZone[state="overtime"] {
+    border-color: #e65100;
+    background-color: #2a2218;
+}
+
+/* DNF */
+QFrame#playerZone[state="dnf"] {
+    border-color: #b71c1c;
+    background-color: #2a1a1a;
+}
+
+/* Penalty label */
+QLabel#penaltyLabel {
+    color: #ff9800;
+    font-size: 14px;
+    font-weight: 700;
+}
