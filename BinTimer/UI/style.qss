@@ -513,11 +513,28 @@ QLabel#moveLabel {
     font-weight: 500;
 }
 
-/* Cube Visualizer */
-QWidget#cubeVisualizer {
+/* Cube Visualizers */
+QWidget#cubeVisualizer,
+QWidget#cubeVisualizer3D {
     background-color: transparent;
     border: none;
     margin: 4px 0;
+}
+
+/* Analytics button */
+QPushButton#analyticsBtn {
+    background-color: #1e3a5f;
+    border: 1px solid #1976d2;
+    color: #90caf9;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 8px;
+}
+
+QPushButton#analyticsBtn:hover {
+    background-color: #1565c0;
+    color: #ffffff;
 }
 
 /* Start match button — green accent */

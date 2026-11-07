@@ -227,18 +227,45 @@ class PlayerZone(QFrame):
 
     # ── Public API ───────────────────────────────────────────────────
 
+    def current_elapsed_ms(self) -> int:
+        """Return the current solve time in milliseconds."""
+        if self._state == "solving":
+            return self._elapsed.elapsed()
+        return self.elapsed_ms
+
+    def set_scrambling(self):
+        """Set state to scrambling (waiting for user to indicate done)."""
+        self._state = "scrambling"
+        self.penalty = ""
+        self.elapsed_ms = 0
+        self.rank_label.setText("")
+        self.penalty_label.setText("")
+        self.move_label.setText("")
+        if self._ble_mode and self._ble_connected:
+            self.status_label.setText("Scrambling — Space to inspect")
+        else:
+            self.status_label.setText("Scrambling")
+        self._set_visual_state("scrambling")
+
     def player_action(self):
         """
-        Generic action triggered by keypress, touch, or BLE event.
-        Behaviour depends on the current state.
+        Generic action triggered by keypress, touch, or button.
 
-        In BLE mode, keyboard/touch cannot stop the timer — only a
-        cube-solved signal from the BLE manager can.
+        In Bluetooth Smart Cube mode:
+          - Starts only when the physical cube is turned (from inspection).
+          - Manual touch / keyboard stops while solving are STRICTLY BLOCKED;
+            only an authenticated solved state from the cube model can stop it.
         """
-        if self._state == "inspecting":
+        if self._state in ("idle", "scrambling"):
+            # Handled by MainWindow via start_match
+            pass
+        elif self._state == "inspecting":
+            # For BLE connected cubes, the physical cube turn starts the solve
+            if self._ble_mode and self._ble_connected:
+                return
             self.start_solve()
         elif self._state == "solving":
-            # Block manual stop in BLE mode — cube must be solved
+            # Strictly block manual stop in BLE mode — cube must be solved
             if self._ble_mode and self._ble_connected:
                 return
             self.stop_timer()
@@ -252,8 +279,12 @@ class PlayerZone(QFrame):
         self.elapsed_ms  = 0
         self.rank_label.setText("")
         self.penalty_label.setText("")
+        self.move_label.setText("")
         self.timer_label.setText("15")
-        self.status_label.setText("INSPECT")
+        if self._ble_mode and self._ble_connected:
+            self.status_label.setText("Turn cube to start")
+        else:
+            self.status_label.setText("INSPECT")
         self._set_visual_state("inspecting")
 
     def update_inspection(self, elapsed_ms: int):
@@ -374,10 +405,15 @@ class PlayerZone(QFrame):
         self.status_label.setText("Waiting")
         self._set_visual_state("")
 
-    def set_move_count(self, count: int):
-        """Update the displayed move count (BLE mode)."""
+    def set_move_count(self, count: int, tps: float = 0.0):
+        """Update the displayed move count and TPS (BLE mode)."""
         if self._ble_mode:
-            self.move_label.setText(f"{count} moves")
+            if tps > 0.0:
+                self.move_label.setText(f"{count} moves · {tps:.1f} TPS")
+            elif count > 0:
+                self.move_label.setText(f"{count} moves")
+            else:
+                self.move_label.setText("")
 
     # ── Internal ─────────────────────────────────────────────────────
 
@@ -405,5 +441,9 @@ class PlayerZone(QFrame):
     def mousePressEvent(self, event):
         """Click / tap → player action."""
         if event.button() == Qt.MouseButton.LeftButton:
+            # Block manual mouse stops in BLE mode while solving
+            if self._state == "solving" and self._ble_mode and self._ble_connected:
+                event.accept()
+                return
             self.player_action()
         event.accept()

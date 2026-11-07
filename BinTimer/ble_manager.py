@@ -188,6 +188,10 @@ class BleWorker(QObject):
         self._cube    = CubeState()
         self._proto   = "unknown"
 
+    @property
+    def is_connected(self) -> bool:
+        return self._client is not None and self._client.is_connected
+
     # ── Thread management ────────────────────────────────────────────
 
     def start_loop(self):
@@ -413,3 +417,78 @@ class CubeScanDialog(QDialog):
         name = self._devices.get(addr, "Unknown")
         self.device_selected.emit(name, addr)
         self.accept()
+
+
+# ── BLE Manager Singleton ───────────────────────────────────────────
+
+class BleManager(QObject):
+    """
+    Application-wide singleton managing smart cube BLE connections.
+    Persistent across all Qt screen navigation (Setup <-> Timer view).
+    """
+    _instance: BleManager | None = None
+
+    device_discovered = pyqtSignal(int, str, str)  # pid, name, address
+    scan_finished     = pyqtSignal(int)            # pid
+    connected         = pyqtSignal(int, str)       # pid, device_name
+    disconnected      = pyqtSignal(int)            # pid
+    move_detected     = pyqtSignal(int, str)       # pid, move_str
+    cube_solved       = pyqtSignal(int)            # pid
+    status_changed    = pyqtSignal(int, str)       # pid, msg
+    error_occurred    = pyqtSignal(int, str)       # pid, msg
+
+    @classmethod
+    def get_instance(cls) -> BleManager:
+        if cls._instance is None:
+            cls._instance = BleManager()
+        return cls._instance
+
+    def __init__(self):
+        super().__init__()
+        self._workers: dict[int, BleWorker] = {}
+        self._device_names: dict[int, str] = {}
+        self._device_addresses: dict[int, str] = {}
+
+    def get_worker(self, pid: int) -> BleWorker:
+        if pid not in self._workers:
+            w = BleWorker()
+            w.start_loop()
+            w.device_discovered.connect(lambda name, addr, p=pid: self.device_discovered.emit(p, name, addr))
+            w.scan_finished.connect(lambda p=pid: self.scan_finished.emit(p))
+            w.connected.connect(lambda dev, p=pid: self._on_worker_connected(p, dev))
+            w.disconnected.connect(lambda p=pid: self._on_worker_disconnected(p))
+            w.move_detected.connect(lambda mv, p=pid: self.move_detected.emit(p, mv))
+            w.cube_solved.connect(lambda p=pid: self.cube_solved.emit(p))
+            w.status_changed.connect(lambda msg, p=pid: self.status_changed.emit(p, msg))
+            w.error_occurred.connect(lambda msg, p=pid: self.error_occurred.emit(p, msg))
+            self._workers[pid] = w
+        return self._workers[pid]
+
+    def _on_worker_connected(self, pid: int, dev: str):
+        self._device_names[pid] = dev
+        self.connected.emit(pid, dev)
+
+    def _on_worker_disconnected(self, pid: int):
+        self._device_names.pop(pid, None)
+        self._device_addresses.pop(pid, None)
+        self.disconnected.emit(pid)
+
+    def is_connected(self, pid: int) -> bool:
+        w = self._workers.get(pid)
+        return w is not None and w.is_connected
+
+    def get_device_name(self, pid: int) -> str:
+        return self._device_names.get(pid, "Smart Cube")
+
+    def disconnect_cube(self, pid: int):
+        w = self._workers.get(pid)
+        if w:
+            w.disconnect_cube()
+
+    def stop_all(self):
+        for w in self._workers.values():
+            try:
+                w.stop_loop()
+            except Exception:
+                pass
+        self._workers.clear()

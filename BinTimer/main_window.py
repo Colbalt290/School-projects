@@ -25,16 +25,24 @@ from scramble      import generate_scramble
 from player_zone   import PlayerZone, format_time, effective_time
 
 try:
-    from ble_manager import BleWorker, CubeScanDialog, HAS_BLEAK
+    from ble_manager import BleManager, BleWorker, CubeScanDialog, HAS_BLEAK
 except Exception:
     HAS_BLEAK = False
 
 try:
-    from cube_model      import CubeModel
-    from cube_visualizer import CubeVisualizer
+    from cube_model         import CubeModel
+    from cube_visualizer    import CubeVisualizer
+    from cube_visualizer_3d import CubeVisualizer3D
     HAS_CUBE_MODEL = True
 except Exception:
     HAS_CUBE_MODEL = False
+
+try:
+    from solve_analyzer   import analyze_solve, SolveAnalysis
+    from analytics_dialog import AnalyticsDialog
+    HAS_ANALYZER = True
+except Exception:
+    HAS_ANALYZER = False
 
 
 # ── Constants ────────────────────────────────────────────────────────
@@ -119,13 +127,41 @@ class CompletionOverlay(QWidget):
         self.quote_label.setWordWrap(True)
         cl.addWidget(self.quote_label)
 
+        btn_box = QHBoxLayout()
+        btn_box.setSpacing(12)
+        btn_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.analytics_btn = QPushButton("📊  View CFOP Analytics")
+        self.analytics_btn.setObjectName("analyticsBtn")
+        self.analytics_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.analytics_btn.setStyleSheet(
+            "background-color: #1e3a5f; color: #90caf9; border: 1px solid #1976d2;"
+            "border-radius: 8px; padding: 9px 18px; font-weight: 600; font-size: 13px;"
+        )
+        self.analytics_btn.clicked.connect(self._open_analytics)
+        self.analytics_btn.hide()
+        btn_box.addWidget(self.analytics_btn)
+
         close_btn = QPushButton("✕  Close")
         close_btn.setObjectName("overlayCloseBtn")
         close_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         close_btn.clicked.connect(self._dismiss)
-        cl.addWidget(close_btn, 0, Qt.AlignmentFlag.AlignCenter)
+        btn_box.addWidget(close_btn)
+
+        cl.addLayout(btn_box)
 
         outer.addWidget(self.card)
+
+        self._analyses: dict[int, "SolveAnalysis"] = {}
+
+    def _open_analytics(self):
+        if not self._analyses or not HAS_ANALYZER:
+            return
+        # Display analytics for first available player
+        pid = next(iter(self._analyses))
+        analysis = self._analyses[pid]
+        dlg = AnalyticsDialog(analysis, self)
+        dlg.exec()
 
     # ── Public ───────────────────────────────────────────────────────
 
@@ -135,6 +171,7 @@ class CompletionOverlay(QWidget):
         image_path: str | None,
         *,
         mode: str = "pvp",
+        analyses: dict[int, "SolveAnalysis"] | None = None,
     ):
         """
         Populate and display the overlay.
@@ -142,6 +179,11 @@ class CompletionOverlay(QWidget):
         *ranked* is ``[(player_id, elapsed_ms, penalty), ...]``
         sorted by effective time (fastest first, DNFs last).
         """
+        self._analyses = analyses or {}
+        if self._analyses and HAS_ANALYZER:
+            self.analytics_btn.show()
+        else:
+            self.analytics_btn.hide()
         # Image
         if image_path and os.path.isfile(image_path):
             px = QPixmap(image_path).scaledToHeight(
@@ -155,7 +197,12 @@ class CompletionOverlay(QWidget):
             self.title_label.setText("🏁  Solve Complete!")
             pid, ms, pen = ranked[0]
             eff = effective_time(ms, pen)
-            self.rankings_label.setText(format_time(eff, pen))
+            base_str = format_time(eff, pen)
+            if pid in self._analyses:
+                a = self._analyses[pid]
+                self.rankings_label.setText(f"{base_str}\n\n⚡ {a.total_turns} moves · {a.overall_tps:.2f} TPS")
+            else:
+                self.rankings_label.setText(base_str)
         else:
             self.title_label.setText("🏁  Match Complete!")
             medals  = {1: "🥇", 2: "🥈", 3: "🥉"}
@@ -231,13 +278,38 @@ class MainWindow(QMainWindow):
         self._inspection_tick.setInterval(30)       # ≈ 33 Hz
         self._inspection_tick.timeout.connect(self._on_inspection_tick)
 
-        # BLE workers (lazy, one per player)
-        self._ble_workers: dict[int, "BleWorker"] = {}
+        # Persistent BLE connection manager singleton
+        if HAS_BLEAK:
+            self._ble_mgr = BleManager.get_instance()
+            self._ble_mgr.move_detected.connect(self._on_cube_move)
+            self._ble_mgr.cube_solved.connect(self._on_cube_solved)
+            self._ble_mgr.connected.connect(self._on_cube_connected)
+            self._ble_mgr.disconnected.connect(self._on_cube_disconnected)
+            self._ble_mgr.status_changed.connect(
+                lambda pid, msg: self.statusBar().showMessage(f"Player {pid}: {msg}", 4000)
+            )
+            self._ble_mgr.error_occurred.connect(
+                lambda pid, msg: self.statusBar().showMessage(f"⚠ Player {pid}: {msg}", 4000)
+            )
+        else:
+            self._ble_mgr = None
+
+        # Warning countdown timer (3.. 2.. 1.. before inspection)
+        self._warning_timer = QTimer(self)
+        self._warning_timer.setInterval(1000)
+        self._warning_timer.timeout.connect(self._on_warning_tick)
+        self._warning_count = 3
+
+        # Scramble matching and phase tracking
+        self._target_cube = CubeModel() if HAS_CUBE_MODEL else None
+        self._match_phase = "scrambling"  # scrambling | warning | inspecting | solving | stopped
 
         # Virtual cube models and visualizers (one per BLE player)
         self._cube_models:      dict[int, "CubeModel"]      = {}
-        self._cube_visualizers: dict[int, "CubeVisualizer"]  = {}
+        self._cube_visualizers: dict[int, "CubeVisualizer3D"] = {}
         self._ble_move_counts:  dict[int, int]               = {}
+        self._solve_moves:      dict[int, list[tuple[str, int]]] = {}
+        self._last_analysis:    dict[int, "SolveAnalysis"]  = {}
 
         # Keyboard shortcuts (managed dynamically)
         self._shortcuts: list[QShortcut] = []
@@ -320,6 +392,8 @@ class MainWindow(QMainWindow):
         self._cube_models.clear()
         self._cube_visualizers.clear()
         self._ble_move_counts.clear()
+        self._solve_moves.clear()
+        self._last_analysis.clear()
 
         # New timer page
         page = QWidget()
@@ -414,16 +488,25 @@ class MainWindow(QMainWindow):
             zone.timer_stopped.connect(self._on_timer_stopped)
             zone.solve_started.connect(self._on_solve_started)
             if zone.cube_type == "bluetooth":
+                # Check persistent singleton connection state!
+                if self._ble_mgr and self._ble_mgr.is_connected(pid):
+                    zone.ble_connected = True
+                    self.statusBar().showMessage(
+                        f"Player {pid}: Smart cube active ✓ ({self._ble_mgr.get_device_name(pid)})", 3000
+                    )
+                else:
+                    zone.ble_connected = False
+
                 zone.ble_button.clicked.connect(
                     lambda checked, p=pid: self._on_ble_toggle(p, checked)
                 )
                 zone.sync_requested.connect(self._on_sync_requested)
-                # Create virtual cube model + visualizer
+                # Create virtual cube model + 3D visualizer
                 if HAS_CUBE_MODEL:
                     model = CubeModel()
                     self._cube_models[pid] = model
-                    vis = CubeVisualizer()
-                    vis.setMaximumHeight(160)
+                    vis = CubeVisualizer3D()
+                    vis.setMaximumHeight(190)
                     self._cube_visualizers[pid] = vis
                     zone._visualizer_slot.addWidget(vis)
                 self._ble_move_counts[pid] = 0
@@ -453,10 +536,15 @@ class MainWindow(QMainWindow):
     # ── Keyboard shortcuts ───────────────────────────────────────────
 
     def _bind_keys(self, active_keys: dict[int, str]):
-        # Space — start match (or player action in solo)
+        # Space — start match / done scrambling
         sc = QShortcut(QKeySequence(Qt.Key.Key_Space), self)
         sc.activated.connect(self._on_space)
         self._shortcuts.append(sc)
+
+        # Tab — Sync/Reset Virtual Cube (BLE)
+        sc_tab = QShortcut(QKeySequence(Qt.Key.Key_Tab), self)
+        sc_tab.activated.connect(self._on_sync_active_cubes)
+        self._shortcuts.append(sc_tab)
 
         if self._config and self._config.mode == "pvp":
             for pid, ch in active_keys.items():
@@ -468,17 +556,27 @@ class MainWindow(QMainWindow):
                 self._shortcuts.append(sc)
 
     def _update_hint(self, active_keys: dict[int, str]):
+        has_ble = any(z.cube_type == "bluetooth" for z in self.zones.values())
         if self._config and self._config.mode == "solo":
-            parts = ["Space — start / stop", "Esc — back"]
-            if self._config.inspection_enabled:
-                parts.insert(1, "inspection → solve → stop")
+            parts = []
+            if has_ble:
+                parts.append("Space — done scrambling → inspect")
+                parts.append("Turn cube — start solve")
+                parts.append("Tab — sync cube")
+            else:
+                parts.append("Space — start / stop")
+                if self._config.inspection_enabled:
+                    parts.append("inspection → solve → stop")
+            parts.append("Esc — back")
         else:
             keys_str = " / ".join(active_keys.values())
             parts = [
-                "Space — start",
+                "Space — done scrambling / start",
                 "Esc — back / reset",
                 f"{keys_str} — stop player",
             ]
+            if has_ble:
+                parts.append("Tab — sync cube")
         self._hint_label.setText("  ·  ".join(parts))
 
     # ── Scramble ─────────────────────────────────────────────────────
@@ -486,40 +584,63 @@ class MainWindow(QMainWindow):
     def _new_scramble(self):
         self._current_scramble = generate_scramble(20)
         self.scramble_label.setText(self._current_scramble)
-        self._heading_label.setText("NEXT SCRAMBLE")
-        # Apply scramble to any active BLE cube models so they match the scramble
-        for pid, model in self._cube_models.items():
-            model.reset()
+        self._heading_label.setText("SCRAMBLE CUBE")
+        self.start_btn.setText("⏵   Ready (Skip to Inspect)")
+        self.start_btn.setEnabled(True)
+        self._match_phase = "scrambling"
+        self._match_running = False
+
+        # Set target scramble model for auto-detection
+        if HAS_CUBE_MODEL:
+            self._target_cube = CubeModel()
             try:
-                model.apply_scramble(self._current_scramble)
+                self._target_cube.apply_scramble(self._current_scramble)
             except Exception:
                 pass
+
+        for z in self.zones.values():
+            z.set_scrambling()
+
+        # Initialise virtual models representing current physical cube state
+        for pid, model in self._cube_models.items():
+            model.reset()
             vis = self._cube_visualizers.get(pid)
             if vis:
                 vis.update_state(model.get_facelets())
             self._ble_move_counts[pid] = 0
+            if pid in self._solve_moves:
+                self._solve_moves[pid].clear()
 
     # ═════════════════════════════════════════════════════════════════
     #  Space key handler
     # ═════════════════════════════════════════════════════════════════
 
     def _on_space(self):
-        if not self._match_running:
+        if self._match_phase == "scrambling" or not self._match_running:
             self.start_match()
         elif self._config and self._config.mode == "solo":
-            # In solo mode Space also acts as the player action
             z = self.zones.get(1)
             if z:
+                # Strictly block Space from stopping the solve in Bluetooth Smart Cube mode
+                if z.state == "solving" and z._ble_mode and z._ble_connected:
+                    return
                 z.player_action()
 
     # ═════════════════════════════════════════════════════════════════
-    #  Match flow
+    #  Match flow & Automated Transitions
     # ═════════════════════════════════════════════════════════════════
 
     def start_match(self):
-        """Start a match: either inspection phase or direct timers."""
-        if self._match_running:
+        """User indicates ready / done scrambling → trigger warning countdown & inspection."""
+        if self._match_running and self._match_phase != "scrambling":
             return
+        self._trigger_warning_phase()
+
+    def _trigger_warning_phase(self):
+        """Transition to brief warning phase ('Inspection in 3... 2... 1...') then inspection."""
+        if self._match_phase in ("warning", "inspecting", "solving"):
+            return
+        self._match_phase = "warning"
         self._match_running = True
         self._finish_order.clear()
         self.start_btn.setEnabled(False)
@@ -527,24 +648,45 @@ class MainWindow(QMainWindow):
         if self.overlay:
             self.overlay.hide()
 
-        if self._config and self._config.inspection_enabled:
-            self._start_inspection()
+        # Reset move recordings
+        for pid in self.zones:
+            self._solve_moves[pid] = []
+            self._ble_move_counts[pid] = 0
+
+        self._warning_count = 3
+        self._heading_label.setText("GET READY FOR INSPECTION")
+        for z in self.zones.values():
+            z.timer_label.setText("3")
+            z.status_label.setText("Inspection in 3...")
+        self._warning_timer.start()
+
+    def _on_warning_tick(self):
+        self._warning_count -= 1
+        if self._warning_count > 0:
+            for z in self.zones.values():
+                z.timer_label.setText(str(self._warning_count))
+                z.status_label.setText(f"Inspection in {self._warning_count}...")
         else:
-            self._start_all_timers()
+            self._warning_timer.stop()
+            self._start_inspection()
 
     def _start_all_timers(self):
         """Start solve timers for every active zone simultaneously."""
         self._heading_label.setText("MATCH IN PROGRESS")
+        self._match_phase = "solving"
         for z in self.zones.values():
             z.start_timer()
 
     # ── Inspection ───────────────────────────────────────────────────
 
     def _start_inspection(self):
+        self._match_phase = "inspecting"
         self._inspection_running = True
         self._heading_label.setText("⏱  INSPECTION")
         for z in self.zones.values():
             z.start_inspection()
+            if z.cube_type == "bluetooth":
+                z.status_label.setText("First turn starts timer!")
         self._inspection_elapsed.start()
         self._inspection_tick.start()
 
@@ -558,7 +700,6 @@ class MainWindow(QMainWindow):
         if not any_inspecting:
             self._inspection_tick.stop()
             self._inspection_running = False
-            # Update heading if anyone is still solving
             if any(z.state == "solving" for z in self.zones.values()):
                 self._heading_label.setText("MATCH IN PROGRESS")
 
@@ -576,6 +717,15 @@ class MainWindow(QMainWindow):
         pos = len(self._finish_order)
         self.zones[pid].set_finish_position(pos)
 
+        # Compute post-solve CFOP analytics for BLE player
+        if HAS_ANALYZER and pid in self._solve_moves and self._solve_moves[pid]:
+            analysis = analyze_solve(
+                self._current_scramble,
+                self._solve_moves[pid],
+                ms,
+            )
+            self._last_analysis[pid] = analysis
+
         # All done?
         if all(z.stopped for z in self.zones.values()):
             self._match_complete()
@@ -584,6 +734,8 @@ class MainWindow(QMainWindow):
         self._match_running = False
         self._inspection_running = False
         self._inspection_tick.stop()
+        self._warning_timer.stop()
+        self._match_phase = "stopped"
         self.start_btn.setEnabled(True)
         self._back_btn.setEnabled(True)
 
@@ -599,14 +751,25 @@ class MainWindow(QMainWindow):
 
         mode = self._config.mode if self._config else "pvp"
         QTimer.singleShot(400, lambda: self.overlay.show_results(
-            ranked, self._image_path, mode=mode,
+            ranked, self._image_path, mode=mode, analyses=self._last_analysis,
         ))
+
+        # In solo mode, if smart cube analysis is available, automatically show the AnalyticsDialog!
+        if mode == "solo" and 1 in self._last_analysis and HAS_ANALYZER:
+            QTimer.singleShot(750, lambda: self._show_analytics_dialog(1))
+
+    def _show_analytics_dialog(self, pid: int = 1):
+        if pid in self._last_analysis and HAS_ANALYZER:
+            dlg = AnalyticsDialog(self._last_analysis[pid], self)
+            dlg.exec()
 
     def reset_match(self):
         """Reset everything and generate a fresh scramble."""
         self._match_running = False
         self._inspection_running = False
         self._inspection_tick.stop()
+        self._warning_timer.stop()
+        self._match_phase = "scrambling"
         self._finish_order.clear()
         self.start_btn.setEnabled(True)
         self._back_btn.setEnabled(True)
@@ -617,6 +780,9 @@ class MainWindow(QMainWindow):
         for pid, model in self._cube_models.items():
             model.reset()
             self._ble_move_counts[pid] = 0
+            if pid in self._solve_moves:
+                self._solve_moves[pid].clear()
+        self._last_analysis.clear()
         self._new_scramble()
         self.statusBar().showMessage("Reset — ready for next match", 3000)
 
@@ -624,7 +790,7 @@ class MainWindow(QMainWindow):
 
     def _go_to_config(self):
         """Return to the config screen."""
-        if self._match_running:
+        if self._match_running and self._match_phase not in ("scrambling", "stopped"):
             return      # don't navigate away mid-match
         self.reset_match()
         self._stack.setCurrentIndex(0)
@@ -656,6 +822,12 @@ class MainWindow(QMainWindow):
                     eff = effective_time(ms, pen)
                     time_str = format_time(eff, pen)
                     f.write(f"   Time: {time_str}\n")
+                    if _pid in self._last_analysis:
+                        a = self._last_analysis[_pid]
+                        f.write(f"   Turns: {a.total_turns} moves | TPS: {a.overall_tps:.2f}\n")
+                        f.write("   Reconstruction:\n")
+                        for p in a.phases:
+                            f.write(f"     {p.name:<7}: {p.moves_str} ({p.time_str}, {p.tps:.2f} TPS)\n")
                 else:
                     ord_map = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th"}
                     for rank, (pid, ms, pen) in enumerate(ranked, 1):
@@ -665,6 +837,9 @@ class MainWindow(QMainWindow):
                             f"   {ord_map.get(rank, ''):\u003e3}  "
                             f"Player {pid}  —  {time_str}\n"
                         )
+                        if pid in self._last_analysis:
+                            a = self._last_analysis[pid]
+                            f.write(f"         Turns: {a.total_turns} | TPS: {a.overall_tps:.2f}\n")
                 f.write(f"{'=' * 52}\n")
         except OSError as exc:
             print(f"[BinTimer] Could not write solves.txt: {exc}")
@@ -689,43 +864,30 @@ class MainWindow(QMainWindow):
             self._ble_disconnect(pid)
 
     def _ble_connect(self, pid: int):
-        if pid not in self._ble_workers:
-            w = BleWorker()
-            w.start_loop()
-            w.move_detected.connect(lambda mv, p=pid: self._on_cube_move(p, mv))
-            w.cube_solved.connect(lambda p=pid: self._on_cube_solved(p))
-            w.disconnected.connect(lambda p=pid: self._on_cube_disconnected(p))
-            w.status_changed.connect(
-                lambda msg: self.statusBar().showMessage(msg, 5000),
-            )
-            w.error_occurred.connect(
-                lambda msg: self.statusBar().showMessage(f"⚠ {msg}", 5000),
-            )
-            self._ble_workers[pid] = w
-
-        worker = self._ble_workers[pid]
+        if not self._ble_mgr:
+            return
+        worker = self._ble_mgr.get_worker(pid)
         dlg = CubeScanDialog(worker, self)
         dlg.device_selected.connect(
             lambda name, addr, p=pid: self._ble_finish_connect(p, addr),
         )
         if dlg.exec() != dlg.DialogCode.Accepted:
-            self.zones[pid].ble_button.setChecked(False)
+            if not self._ble_mgr.is_connected(pid):
+                self.zones[pid].ble_button.setChecked(False)
 
     def _ble_finish_connect(self, pid: int, addr: str):
-        w = self._ble_workers.get(pid)
-        if not w:
+        if not self._ble_mgr:
             return
-        w.connected.connect(
-            lambda _a, p=pid: self._on_cube_connected(p),
-        )
-        w.connect_to(addr)
+        worker = self._ble_mgr.get_worker(pid)
+        worker.connect_to(addr)
 
-    def _on_cube_connected(self, pid: int):
+    def _on_cube_connected(self, pid: int, name: str = ""):
         z = self.zones.get(pid)
         if z:
             z.ble_connected = True
+        label = f" ({name})" if name else ""
         self.statusBar().showMessage(
-            f"Player {pid}: smart cube connected ✓", 4000,
+            f"Player {pid}: smart cube connected{label} ✓", 4000,
         )
 
     def _on_cube_disconnected(self, pid: int):
@@ -737,25 +899,25 @@ class MainWindow(QMainWindow):
         )
 
     def _on_sync_requested(self, pid: int):
-        """Reset and synchronize the virtual cube model with the current scramble."""
+        """Reset internal virtual cube to solved state to recover from BLE packet drop."""
         model = self._cube_models.get(pid)
         zone = self.zones.get(pid)
         if model:
             model.reset()
-            # If idle or inspecting, re-apply current scramble so visualizer matches
-            if zone and zone.state in ("idle", "inspecting"):
-                if self._current_scramble:
-                    try:
-                        model.apply_scramble(self._current_scramble)
-                    except Exception:
-                        pass
             vis = self._cube_visualizers.get(pid)
             if vis:
                 vis.update_state(model.get_facelets())
         self._ble_move_counts[pid] = 0
+        if pid in self._solve_moves:
+            self._solve_moves[pid].clear()
         if zone:
             zone.set_move_count(0)
-        self.statusBar().showMessage(f"Player {pid}: Cube synchronized ✓", 3000)
+        self.statusBar().showMessage(f"Player {pid}: Virtual cube synced to SOLVED state ✓", 3000)
+
+    def _on_sync_active_cubes(self):
+        """Keybind handler (Tab) to sync virtual cubes."""
+        for pid in self._cube_models:
+            self._on_sync_requested(pid)
 
     def _on_cube_move(self, pid: int, move: str):
         """Handle a move detected from a smart cube."""
@@ -763,38 +925,76 @@ class MainWindow(QMainWindow):
         if not zone:
             return
 
-        # If in inspection, first move starts the solve timer!
-        if zone.state == "inspecting":
+        # Phase 1: Scrambling — track moves & auto-detect target scramble match
+        if self._match_phase == "scrambling" or zone.state == "scrambling":
+            model = self._cube_models.get(pid)
+            if model:
+                try:
+                    model.apply_move(move)
+                    vis = self._cube_visualizers.get(pid)
+                    if vis:
+                        vis.update_state(model.get_facelets())
+                    if hasattr(self, "_target_cube") and self._target_cube:
+                        if model.get_facelets() == self._target_cube.get_facelets():
+                            self.statusBar().showMessage(f"Player {pid}: Scramble matched! Starting inspection...", 3000)
+                            self._trigger_warning_phase()
+                except Exception as e:
+                    print(f"[BinTimer] Scramble move tracking error: {e}")
+            return
+
+        # Phase 2: Warning countdown (3.. 2.. 1..) — track moves without starting
+        if self._match_phase == "warning":
+            model = self._cube_models.get(pid)
+            if model:
+                try:
+                    model.apply_move(move)
+                    vis = self._cube_visualizers.get(pid)
+                    if vis:
+                        vis.update_state(model.get_facelets())
+                except Exception:
+                    pass
+            return
+
+        # Phase 3: Inspection countdown — first physical turn instantly starts the solve timer!
+        if zone.state == "inspecting" or self._match_phase == "inspecting":
             zone.start_solve()
+            self._match_phase = "solving"
+            self._heading_label.setText("MATCH IN PROGRESS")
 
-        # Update move count during solve
+        # Phase 4: Solving — record telemetry, update TPS, apply to model, and check is_solved
         if zone.state == "solving":
-            self._ble_move_counts[pid] = self._ble_move_counts.get(pid, 0) + 1
-            zone.set_move_count(self._ble_move_counts[pid])
+            elapsed_ms = zone.current_elapsed_ms()
+            if pid not in self._solve_moves:
+                self._solve_moves[pid] = []
+            self._solve_moves[pid].append((move, elapsed_ms))
 
-        # Apply move to virtual model
-        model = self._cube_models.get(pid)
-        if model:
-            try:
-                model.apply_move(move)
-                vis = self._cube_visualizers.get(pid)
-                if vis:
-                    vis.update_state(model.get_facelets())
+            move_count = len(self._solve_moves[pid])
+            tps = (move_count / (elapsed_ms / 1000.0)) if elapsed_ms > 0 else 0.0
+            zone.set_move_count(move_count, tps)
 
-                # Check if solve is complete
-                if zone.state == "solving" and model.is_solved():
-                    zone.stop_timer()
-                    self.statusBar().showMessage(
-                        f"Player {pid}: Cube solved in {self._ble_move_counts.get(pid, 0)} moves! ✓",
-                        4000,
-                    )
-            except Exception as e:
-                print(f"[BinTimer] Error applying move {move}: {e}")
+            # Apply move to virtual model
+            model = self._cube_models.get(pid)
+            if model:
+                try:
+                    model.apply_move(move)
+                    vis = self._cube_visualizers.get(pid)
+                    if vis:
+                        vis.update_state(model.get_facelets())
+
+                    # Hardware-driven stop: solve timer stops ONLY when cube is solved
+                    if model.is_solved():
+                        zone.stop_timer()
+                        self.statusBar().showMessage(
+                            f"Player {pid}: Cube solved in {elapsed_ms/1000.0:.2f}s ({move_count} moves, {tps:.2f} TPS)! ✓",
+                            5000,
+                        )
+                except Exception as e:
+                    print(f"[BinTimer] Error applying move {move}: {e}")
 
     def _on_cube_solved(self, pid: int):
         """
         BLE reports the cube state packet is identity.
-        Only stop if the virtual cube agrees or after sufficient solve duration.
+        The timer will ONLY stop if the virtual cube agrees or after sufficient solve duration.
         """
         zone = self.zones.get(pid)
         if not zone or zone.state != "solving":
@@ -804,21 +1004,19 @@ class MainWindow(QMainWindow):
         if model:
             if model.is_solved():
                 zone.stop_timer()
-            elif zone.elapsed_ms > 2000 and self._ble_move_counts.get(pid, 0) > 8:
-                # Accept solve if timer ran for > 2s and > 8 moves took place
+            elif zone.current_elapsed_ms() > 3000 and len(self._solve_moves.get(pid, [])) >= 10:
                 model.reset()
                 vis = self._cube_visualizers.get(pid)
                 if vis:
                     vis.update_state(model.get_facelets())
                 zone.stop_timer()
         else:
-            if zone.elapsed_ms > 1500:
+            if zone.current_elapsed_ms() > 2000:
                 zone.stop_timer()
 
     def _ble_disconnect(self, pid: int):
-        w = self._ble_workers.get(pid)
-        if w:
-            w.disconnect_cube()
+        if self._ble_mgr:
+            self._ble_mgr.disconnect_cube(pid)
         z = self.zones.get(pid)
         if z:
             z.ble_connected = False
@@ -853,6 +1051,9 @@ class MainWindow(QMainWindow):
                     for zone in self.zones.values():
                         local = zone.mapFromGlobal(gpos)
                         if zone.rect().contains(local):
+                            # Block touch stop in BLE mode while solving
+                            if zone.state == "solving" and zone._ble_mode and zone._ble_connected:
+                                break
                             zone.player_action()
                             break
             except Exception:
@@ -867,9 +1068,6 @@ class MainWindow(QMainWindow):
             self.overlay.setGeometry(self.overlay.parent().rect())
 
     def closeEvent(self, ev):
-        for w in self._ble_workers.values():
-            try:
-                w.stop_loop()
-            except Exception:
-                pass
+        if self._ble_mgr:
+            self._ble_mgr.stop_all()
         super().closeEvent(ev)
